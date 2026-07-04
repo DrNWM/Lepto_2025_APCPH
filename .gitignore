@@ -1,0 +1,84 @@
+# =============================================================================
+# PRESENTATION FILES (COMMIT THESE)
+# =============================================================================
+# _output/ is COMMITTED - contains final HTML/PDF/PPTX for audience
+
+# =============================================================================
+# QUARTO BUILD CACHE (IGNORE)
+# =============================================================================
+_quarto/
+*_cache/
+.quarto/
+
+# =============================================================================
+# REPRODUCIBILITY INFRASTRUCTURE (HIDE FROM PUBLIC - DEVELOPMENT ONLY)
+# =============================================================================
+
+# renv: Environment lockfile and library
+renv/
+renv.lock
+
+# targets: Pipeline cache and metadata
+_targets/
+_targets_*/
+.targets
+
+# Setup scripts (development/internal use)
+00_setup_reproducibility.R
+REPRODUCIBILITY.md
+
+# =============================================================================
+# R GENERATED FILES & OUTPUTS (IGNORE)
+# =============================================================================
+.Rhistory
+.Rdata
+.RDataTmp
+.RDataTmp*
+.Rproj.user/
+
+# Generated tables and reports (regenerate from _targets.R)
+*.xlsx
+*.csv
+
+# Intermediate RDS files (but keep clean data in data/clean/)
+# *.rds  (don't ignore - we want data/clean/*.rds)
+
+# =============================================================================
+# DATA FILES (IGNORE SENSITIVE RAW DATA)
+# =============================================================================
+data/raw/
+# Keep: data/clean/ (clean, ready-to-share data)
+
+# =============================================================================
+# IDE & OS FILES (IGNORE)
+# =============================================================================
+.vscode/
+.idea/
+.obsidian/
+*.Rproj
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# =============================================================================
+# ENVIRONMENT & CONFIG (IGNORE SENSITIVE)
+# =============================================================================
+.env
+.envrc
+.Renviron
+
+# =============================================================================
+# WHAT GETS COMMITTED (PUBLIC FRIENDLY)
+# =============================================================================
+# ✅ conference_2026.qmd (source)
+# ✅ _targets.R (pipeline definition - reproducibility)
+# ✅ _output/ (final HTML, PDF, PPTX for audience)
+# ✅ data/clean/ (clean data)
+# ✅ outputs/ (figures)
+# ✅ assets/ (styling)
+# ✅ README.md (for audience)
+# ✅ .gitignore (this file)
+# ✅ .here (project marker)
+#
+# ❌ renv.lock, setup scripts (development only)
