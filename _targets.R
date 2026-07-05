@@ -159,6 +159,21 @@ list(
                                     if_else(n_deaths != 1, "s", ""), ")")
         )
 
+      # Map each district to its urbanisation category (Fig 4 palette)
+      district_ur <- lepto_data |>
+        filter(!is.na(ur_category)) |>
+        distinct(district, ur_category) |>
+        mutate(ur_category = factor(ur_category,
+                                    levels = c("Rural", "Urban-Rural", "Urban", "City Centre")))
+
+      # District name labels: black text on an urbanisation-coloured pill.
+      # Pill colour is passed as a per-row vector (not a mapped fill scale),
+      # so it never collides with the Alive/Died fill legend.
+      district_labels <- district_cfr |>
+        left_join(district_ur, by = "district") |>
+        mutate(district = fct_reorder(district, cfr))
+      label_fill <- unname(ur_colours[as.character(district_labels$ur_category)])
+
       plot_data |>
         ggplot(aes(x = fct_reorder(.data$district, .data$cfr), y = .data$n_cases_outcome,
                    fill = .data$outcome)) +
@@ -171,22 +186,44 @@ list(
                   aes(x = district, y = 0.50, label = case_death_label),
                   hjust = 0, vjust = 0.5, size = 3.8,
                   colour = "#1b1b1b", inherit.aes = FALSE) +
+        # Invisible layer: carries the urbanisation colour scale so a second
+        # legend is drawn without touching the Alive/Died fill legend
+        geom_point(data = district_labels,
+                   aes(x = district, y = 0.5, colour = ur_category),
+                   alpha = 0, inherit.aes = FALSE) +
+        # District name pills: black bold text on urbanisation-coloured badge
+        geom_label(data = district_labels,
+                   aes(x = district, y = -0.015, label = district),
+                   fill = label_fill, colour = "white", fontface = "bold",
+                   size = 3.8, hjust = 1, label.r = unit(0.5, "lines"),
+                   label.padding = unit(0.28, "lines"), label.size = 0,
+                   inherit.aes = FALSE, show.legend = FALSE) +
         scale_fill_manual(values = outcome_colours, drop = FALSE) +
-        scale_y_continuous(labels = \(x) paste0(x * 100, "%"), expand = expansion(mult = c(0, 0.12))) +
+        scale_colour_manual(values = ur_colours, name = "Urbanisation",
+                            drop = FALSE, na.translate = FALSE) +
+        scale_y_continuous(labels = \(x) paste0(x * 100, "%"),
+                           expand = expansion(mult = c(0.02, 0.12))) +
         labs(
           title = "Cases by District, Split by Outcome (Standardized)",
-          subtitle = "Districts ranked by Case Fatality Rate (highest at top) | 100% stacked",
+          subtitle = "Districts ranked by Case Fatality Rate (highest at top) | 100% stacked | District labels coloured by urbanisation",
           x = NULL,
           y = "Proportion of Cases (%)",
           fill = "Outcome",
           caption = "Source: CDCIS e-Notifikasi"
         ) +
-        coord_flip() +
+        coord_flip(clip = "off") +
+        guides(
+          fill = guide_legend(order = 1),
+          colour = guide_legend(order = 2, override.aes = list(alpha = 1, size = 4))
+        ) +
         theme(
           legend.position = "top",
           legend.justification = "center",
           legend.background = element_rect(fill = "white", colour = "grey80"),
-          legend.direction = "horizontal"
+          legend.direction = "horizontal",
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          plot.margin = margin(5.5, 5.5, 5.5, 95)
         )
     }
   ),
