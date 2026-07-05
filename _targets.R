@@ -908,22 +908,6 @@ list(
     format = "file"
   ),
 
-  tar_target(
-    logistic_summary,
-    {
-      tibble(Summary = "Binary logistic regression results")
-    }
-  ),
-
-  tar_target(
-    logistic_summary_txt,
-    {
-      writeLines("Results saved to outputs/", here("outputs", "07_logistic_summary.txt"))
-      here("outputs", "07_logistic_summary.txt")
-    },
-    format = "file"
-  ),
-
   # =========================================================================
   # SECTION 10B: FOREST PLOT - UNIVARIATE RESULTS
   # =========================================================================
