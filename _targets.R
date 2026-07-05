@@ -104,12 +104,147 @@ list(
   ),
 
   # =========================================================================
-  # SECTION 2: FIGURE 1 - CASES BY DISTRICT, SPLIT BY OUTCOME
+  # SECTION 2: FIGURE 1 - AGE DISTRIBUTION BY OUTCOME
+  # =========================================================================
+
+  tar_target(
+    fig1_age_outcome,
+    {
+      plot_data <- lepto_data |>
+        filter(!is.na(age_years), !is.na(death)) |>
+        mutate(
+          outcome = factor(
+            case_when(
+              death == 1 ~ "Died",
+              death == 0 ~ "Alive",
+              .default = NA_character_
+            ),
+            levels = c("Alive", "Died")
+          )
+        ) |>
+        filter(!is.na(outcome))
+
+      summary_stats <- plot_data |>
+        group_by(outcome) |>
+        summarise(
+          median_age = median(age_years, na.rm = TRUE),
+          n_samples = n(),
+          .groups = "drop"
+        ) |>
+        mutate(
+          label = paste0("Median: ", median_age, " years\n(n = ", n_samples, ")")
+        )
+
+      plot_data |>
+        ggplot(aes(x = .data$outcome, y = .data$age_years, fill = .data$outcome)) +
+        geom_violin(alpha = 0.6, trim = FALSE) +
+        geom_boxplot(width = 0.15, alpha = 0.8, outlier.shape = NA) +
+        geom_text(data = summary_stats,
+                  aes(x = outcome, y = 97, label = label),
+                  inherit.aes = FALSE, size = 3.2, fontface = "bold",
+                  colour = "#1b1b1b", vjust = 1, lineheight = 1) +
+        scale_fill_manual(values = outcome_colours, drop = FALSE, na.translate = FALSE) +
+        scale_y_continuous(breaks = seq(0, 80, 10)) +
+        labs(
+          title = "Age Distribution by Outcome",
+          subtitle = "Violin = distribution shape | Box = median and IQR",
+          x = "Outcome",
+          y = "Age (years)",
+          fill = "Outcome",
+          caption = "Source: CDCIS e-Notifikasi"
+        ) +
+        theme(
+          legend.position = "none",
+          plot.title = element_text(face = "bold", size = 26, hjust = 0, margin = margin(b = 5))
+        )
+    }
+  ),
+
+  tar_target(
+    fig1_file,
+    {
+      ggsave(here("outputs", "fig1_age_by_outcome.png"), fig1_age_outcome,
+             width = 8, height = 6, dpi = 300)
+      here("outputs", "fig1_age_by_outcome.png")
+    },
+    format = "file"
+  ),
+
+  # =========================================================================
+  # SECTION 3: FIGURE 2 - SEX DISTRIBUTION BY OUTCOME
+  # =========================================================================
+
+  tar_target(
+    fig2_sex_outcome,
+    {
+      sex_cfr_data <- tibble(
+        sex_label = c("Male", "Female"),
+        cfr_pct = c(5.67, 2.55)
+      )
+
+      lepto_data |>
+        filter(!is.na(sex), !is.na(death)) |>
+        mutate(
+          sex_label = factor(
+            case_when(
+              sex == "Male" ~ "Male",
+              sex == "Female" ~ "Female",
+              .default = sex
+            ),
+            levels = c("Male", "Female")
+          ),
+          outcome = factor(
+            case_when(
+              death == 1 ~ "Died",
+              death == 0 ~ "Alive",
+              .default = NA_character_
+            ),
+            levels = c("Alive", "Died")
+          )
+        ) |>
+        filter(!is.na(outcome)) |>
+        count(sex_label, outcome) |>
+        ggplot(aes(x = .data$sex_label, y = .data$n, fill = .data$outcome)) +
+        geom_col(position = "stack", alpha = 0.85, width = 0.7) +
+        geom_text(aes(label = .data$n), position = position_stack(vjust = 0.5),
+                  size = 3.2, fontface = "bold") +
+        geom_text(data = sex_cfr_data,
+                  aes(x = sex_label, y = 600, label = paste0("CFR: ", cfr_pct, "%")),
+                  inherit.aes = FALSE, size = 4, fontface = "bold",
+                  colour = "#1b1b1b", vjust = 0) +
+        scale_fill_manual(values = outcome_colours, drop = FALSE) +
+        scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+        labs(
+          title = "Sex Distribution by Outcome",
+          x = "Sex",
+          y = "Number of Cases",
+          fill = "Outcome",
+          caption = "Source: CDCIS e-Notifikasi"
+        ) +
+        theme(
+          legend.position = "top",
+          plot.title = element_text(face = "bold", size = 26, hjust = 0, margin = margin(b = 5))
+        )
+    }
+  ),
+
+  tar_target(
+    fig2_file,
+    {
+      ggsave(here("outputs", "fig2_sex_by_outcome.png"), fig2_sex_outcome,
+             width = 8, height = 6, dpi = 300)
+      here("outputs", "fig2_sex_by_outcome.png")
+    },
+    format = "file"
+  ),
+
+  # =========================================================================
+  # SECTION 4: FIGURE 3 - CASES BY DISTRICT, SPLIT BY OUTCOME
   # Districts ranked by Case Fatality Rate (highest at top)
   # =========================================================================
 
   tar_target(
-    fig1_district_outcome,
+    fig3_district_outcome,
     {
       district_cfr <- lepto_data |>
         group_by(district) |>
@@ -229,146 +364,11 @@ list(
   ),
 
   tar_target(
-    fig1_file,
-    {
-      ggsave(here("outputs", "fig1_cases_by_district_outcome.png"), fig1_district_outcome,
-             width = 11, height = 6, dpi = 300)
-      here("outputs", "fig1_cases_by_district_outcome.png")
-    },
-    format = "file"
-  ),
-
-  # =========================================================================
-  # SECTION 3: FIGURE 2 - AGE DISTRIBUTION BY OUTCOME
-  # =========================================================================
-
-  tar_target(
-    fig2_age_outcome,
-    {
-      plot_data <- lepto_data |>
-        filter(!is.na(age_years), !is.na(death)) |>
-        mutate(
-          outcome = factor(
-            case_when(
-              death == 1 ~ "Died",
-              death == 0 ~ "Alive",
-              .default = NA_character_
-            ),
-            levels = c("Alive", "Died")
-          )
-        ) |>
-        filter(!is.na(outcome))
-
-      summary_stats <- plot_data |>
-        group_by(outcome) |>
-        summarise(
-          median_age = median(age_years, na.rm = TRUE),
-          n_samples = n(),
-          .groups = "drop"
-        ) |>
-        mutate(
-          label = paste0("Median: ", median_age, " years\n(n = ", n_samples, ")")
-        )
-
-      plot_data |>
-        ggplot(aes(x = .data$outcome, y = .data$age_years, fill = .data$outcome)) +
-        geom_violin(alpha = 0.6, trim = FALSE) +
-        geom_boxplot(width = 0.15, alpha = 0.8, outlier.shape = NA) +
-        geom_text(data = summary_stats,
-                  aes(x = outcome, y = 97, label = label),
-                  inherit.aes = FALSE, size = 3.2, fontface = "bold",
-                  colour = "#1b1b1b", vjust = 1, lineheight = 1) +
-        scale_fill_manual(values = outcome_colours, drop = FALSE, na.translate = FALSE) +
-        scale_y_continuous(breaks = seq(0, 80, 10)) +
-        labs(
-          title = "Age Distribution by Outcome",
-          subtitle = "Violin = distribution shape | Box = median and IQR",
-          x = "Outcome",
-          y = "Age (years)",
-          fill = "Outcome",
-          caption = "Source: CDCIS e-Notifikasi"
-        ) +
-        theme(
-          legend.position = "none",
-          plot.title = element_text(face = "bold", size = 26, hjust = 0, margin = margin(b = 5))
-        )
-    }
-  ),
-
-  tar_target(
-    fig2_file,
-    {
-      ggsave(here("outputs", "fig2_age_by_outcome.png"), fig2_age_outcome,
-             width = 8, height = 6, dpi = 300)
-      here("outputs", "fig2_age_by_outcome.png")
-    },
-    format = "file"
-  ),
-
-  # =========================================================================
-  # SECTION 4: FIGURE 3 - SEX DISTRIBUTION BY OUTCOME
-  # =========================================================================
-
-  tar_target(
-    fig3_sex_outcome,
-    {
-      sex_cfr_data <- tibble(
-        sex_label = c("Male", "Female"),
-        cfr_pct = c(5.67, 2.55)
-      )
-
-      lepto_data |>
-        filter(!is.na(sex), !is.na(death)) |>
-        mutate(
-          sex_label = factor(
-            case_when(
-              sex == "Male" ~ "Male",
-              sex == "Female" ~ "Female",
-              .default = sex
-            ),
-            levels = c("Male", "Female")
-          ),
-          outcome = factor(
-            case_when(
-              death == 1 ~ "Died",
-              death == 0 ~ "Alive",
-              .default = NA_character_
-            ),
-            levels = c("Alive", "Died")
-          )
-        ) |>
-        filter(!is.na(outcome)) |>
-        count(sex_label, outcome) |>
-        ggplot(aes(x = .data$sex_label, y = .data$n, fill = .data$outcome)) +
-        geom_col(position = "stack", alpha = 0.85, width = 0.7) +
-        geom_text(aes(label = .data$n), position = position_stack(vjust = 0.5),
-                  size = 3.2, fontface = "bold") +
-        geom_text(data = sex_cfr_data,
-                  aes(x = sex_label, y = 600, label = paste0("CFR: ", cfr_pct, "%")),
-                  inherit.aes = FALSE, size = 4, fontface = "bold",
-                  colour = "#1b1b1b", vjust = 0) +
-        scale_fill_manual(values = outcome_colours, drop = FALSE) +
-        scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-        labs(
-          title = "Sex Distribution by Outcome",
-          x = "Sex",
-          y = "Number of Cases",
-          fill = "Outcome",
-          caption = "Source: CDCIS e-Notifikasi"
-        ) +
-        theme(
-          legend.position = "top",
-          plot.title = element_text(face = "bold", size = 26, hjust = 0, margin = margin(b = 5))
-        )
-    }
-  ),
-
-  tar_target(
     fig3_file,
     {
-      ggsave(here("outputs", "fig3_sex_by_outcome.png"), fig3_sex_outcome,
-             width = 8, height = 6, dpi = 300)
-      here("outputs", "fig3_sex_by_outcome.png")
+      ggsave(here("outputs", "fig3_cases_by_district_outcome.png"), fig3_district_outcome,
+             width = 11, height = 6, dpi = 300)
+      here("outputs", "fig3_cases_by_district_outcome.png")
     },
     format = "file"
   ),
@@ -508,11 +508,11 @@ list(
   ),
 
   # =========================================================================
-  # SECTION 9C: FIGURE 10 - URBANISATION CATEGORY VS OUTCOME WITH CFR
+  # SECTION 9C: FIGURE 9 - URBANISATION CATEGORY VS OUTCOME WITH CFR
   # =========================================================================
 
   tar_target(
-    fig10_urcategory_cfr,
+    fig9_urcategory_cfr,
     {
       cfr_by_ur <- lepto_data |>
         filter(!is.na(ur_category), !is.na(death)) |>
@@ -567,11 +567,11 @@ list(
   ),
 
   tar_target(
-    fig10_file,
+    fig9_file,
     {
-      ggsave(here("outputs", "fig10_urcategory_vs_outcome.png"), fig10_urcategory_cfr,
+      ggsave(here("outputs", "fig9_urcategory_vs_outcome.png"), fig9_urcategory_cfr,
              width = 8, height = 6, dpi = 300)
-      here("outputs", "fig10_urcategory_vs_outcome.png")
+      here("outputs", "fig9_urcategory_vs_outcome.png")
     },
     format = "file"
   ),
@@ -1215,5 +1215,5 @@ list(
 #   targets::tar_visnetwork()
 #
 # Run specific target:
-#   targets::tar_make(names = "fig1_district_outcome")
+#   targets::tar_make(names = "fig3_district_outcome")
 # =============================================================================
