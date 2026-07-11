@@ -8,7 +8,7 @@ Reproducible analysis of anonymised 2025 Leptospirosis surveillance data from Jo
 - Case IDs only (CASE_XXXX format)
 - Zero PII: No names, ID numbers, dates, contact info, or medical record numbers
 - 881 anonymised cases, district-level analysis
-- Includes: Age, sex, ethnicity, district, laboratory results, outcomes
+- Includes: Age, sex, district, and outcomes
 
 ## Ethics & Governance
 
